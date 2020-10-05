@@ -632,8 +632,10 @@ void trainDataset(const char* file)
 
             // train discriminator on generator
             float input[DIGEST_SIZE] = {0};
-            for(int i = 0; i < DIGEST_SIZE; i++)
-                input[i] = (qRand(0, TABLE_SIZE)/TABLE_SIZE_H)-1.0;
+            const int len = qRand(1, DIGEST_SIZE);
+            for(int i = 0; i < len; i++)
+                input[i] = (((double)qRand(0, TABLE_SIZE))/TABLE_SIZE_H)-1.0;
+                
             float output[DIGEST_SIZE] = {0};
             doGenerator(0, &input[0], &output[0]);
             doDiscriminator(&output[0], 0);
@@ -700,6 +702,26 @@ float isDaisy(char* str)
     return (r+1.57079632679)*31.830988618; //arctan conversion
 }
 
+float rndDaisy()
+{
+    float nstr[DIGEST_SIZE] = {0};
+    const int len = qRand(1, DIGEST_SIZE);
+    for(int i = 0; i < len; i++)
+        nstr[i] = (((double)qRand(0, TABLE_SIZE))/TABLE_SIZE_H)-1.0;
+
+    for(int i = 0; i < DIGEST_SIZE; i++)
+    {
+        const uint ind = (nstr[i]+1.0)*TABLE_SIZE_H;
+        if(nstr[i] != 0)
+            printf("%s (%.2f) ", wtable[ind], nstr[i]);
+    }
+
+    printf("\n");
+
+    const float r = doDiscriminator(nstr, -2);
+    return (r+1.57079632679)*31.830988618; //arctan conversion
+}
+
 
 //*************************************
 // program entry point
@@ -750,10 +772,7 @@ int main(int argc, char *argv[])
 
         if(strcmp(argv[1], "rnd") == 0)
         {
-            char in[256] = {0};
-            snprintf(in, 256, "%s %s %s %s %s", wtable[rand()%TABLE_SIZE], wtable[rand()%TABLE_SIZE], wtable[rand()%TABLE_SIZE], wtable[rand()%TABLE_SIZE], wtable[rand()%TABLE_SIZE]);
-            printf(">>> %s\n", in);
-            printf("%.2f\n", isDaisy(in));
+            printf("> %.2f\n", rndDaisy());
             exit(0);
         }
 
@@ -773,8 +792,9 @@ int main(int argc, char *argv[])
     {
         // random generator input
         float input[DIGEST_SIZE] = {0};
-        for(int i = 0; i < DIGEST_SIZE; i++)
-            input[i] = qRandWeight(-1, 1);
+        const int len = qRand(1, DIGEST_SIZE);
+        for(int i = 0; i < len; i++)
+            input[i] = (((double)qRand(0, TABLE_SIZE))/TABLE_SIZE_H)-1.0;
 
         // do generator
         float output[DIGEST_SIZE] = {0};
