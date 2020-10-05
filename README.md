@@ -10,3 +10,11 @@ The intention of this word table is that this would be the entire vernacular tha
 The network only recognises words of up to 16 characters and each sentence can only have 16 words maximum.
 
 Unfortunately, the performance of this network was still particularly poor.
+
+## Example Usage
+```
+./cfdgan retrain
+./cfdgan "this is an example scentence"
+./cfdgan rnd
+./cfdgan ask
+```
