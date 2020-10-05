@@ -12,9 +12,8 @@ The network only recognises words of up to 16 characters and each sentence can o
 Unfortunately, the performance of this network was still particularly poor.
 
 ## Example Usage
-```
-./cfdgan retrain
-./cfdgan "this is an example scentence"
-./cfdgan rnd
-./cfdgan ask
-```
+- ```./cfdgan retrain``` - You want to start off by training the network from the provided dataset.
+- ```./cfdgan "this is an example scentence"``` - Get a percentage of likelyhood that the user Daisy wrote the provided message.
+- ```./cfdgan rnd``` - Get the percentage of likelyhood that Daisy wrote a provided random message.
+- ```./cfdgan ask``` - A never ending console loop where you get to ask what percntage likelyhood Daisy wrote a given message.
+- ```./cfdgan``` - The adversarial message generator, not for the light hearted, it seems to mostly be racist or sound like its generating political porn video descriptions ..
