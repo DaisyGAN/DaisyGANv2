@@ -15,6 +15,8 @@
 #include <math.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
 
 #define uint uint32_t
 
@@ -26,10 +28,11 @@
 
 #define TRAINING_LOOPS 1
 
-uint  _activator = 1;
+uint  _activator = 5;
 uint  _optimiser = 0;
 float _lrate = 0.003;
 float _lmomentum = 0.9;
+float _dropout = 0.3; //chance of neuron droput 0.3 = 30%
 
 struct
 {
@@ -217,6 +220,25 @@ float qRandWeight(const float min, const float max)
     return pr;
 }
 
+float uRandWeight(const float min, const float max)
+{
+    int f = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
+    uint s = 0;
+    ssize_t result = read(f, &s, 4);
+    srand(s);
+    close(f);
+    float pr = 0;
+    while(pr == 0) //never return 0
+    {
+        const float rv = (float)rand();
+        if(rv == 0)
+            return min;
+        const float rv2 = ( (rv / RAND_MAX) * (max-min) ) + min;
+        pr = roundf(rv2 * 100) / 100; // two decimals of precision
+    }
+    return pr;
+}
+
 uint qRand(const uint min, const uint umax)
 {
     static time_t ls = 0;
@@ -225,6 +247,20 @@ uint qRand(const uint min, const uint umax)
         srand(time(0));
         ls = time(0) + 33;
     }
+    const int rv = rand();
+    const uint max = umax + 1;
+    if(rv == 0)
+        return min;
+    return ( ((float)rv / RAND_MAX) * (max-min) ) + min; //(rand()%(max-min))+min;
+}
+
+uint uRand(const uint min, const uint umax)
+{
+    int f = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
+    uint s = 0;
+    ssize_t result = read(f, &s, 4);
+    srand(s);
+    close(f);
     const int rv = rand();
     const uint max = umax + 1;
     if(rv == 0)
@@ -377,6 +413,12 @@ float crossEntropy(const float predicted, const float expected) //log loss
 
 float doPerceptron(const float* in, ptron* p, const float error_override, const float eo)
 {
+    if(_dropout != 0)
+    {
+        if(uRandWeight(0.01, 1) <= _dropout)
+            return 0;
+    }
+
 //~~ Query perceptron
     //Sum inputs mutliplied by weights
     float ro = 0;
@@ -509,7 +551,7 @@ void doGenerator(const float error, const float* input, float* output)
     Defunct Backprop Method Start
 --------------------------------------------------
 */
-void doSGD(float* weight, float* momentum, const float error)
+void doSGD(float* weight, float* momentum, const float error, const float _lrate)
 {
     // Regular Gradient Descent
     if(_optimiser == 0)
@@ -532,7 +574,7 @@ void doSGD(float* weight, float* momentum, const float error)
     }
 }
 
-void backpropGenerator(const float error)
+void backpropGenerator(const float error, const float lrate)
 {
     // layer one, inputs (fc)
     for(int i = 0; i < DIGEST_SIZE; i++)
@@ -540,9 +582,9 @@ void backpropGenerator(const float error)
         const float layer_error = (1-(1/i))*error;
 
         for(int j = 0; j < g1[i].weights; j++)
-            doSGD(&g1[i].data[j], &g1[i].momentum[j], layer_error);
+            doSGD(&g1[i].data[j], &g1[i].momentum[j], layer_error, lrate);
         
-        doSGD(&g1[i].bias, &g1[i].bias_momentum, layer_error);
+        doSGD(&g1[i].bias, &g1[i].bias_momentum, layer_error, lrate);
     }
 
     // layer two, hidden (fc expansion)
@@ -551,9 +593,9 @@ void backpropGenerator(const float error)
         const float layer_error = (1-(1/i))*error;
 
         for(int j = 0; j < g2[i].weights; j++)
-            doSGD(&g2[i].data[j], &g2[i].momentum[j], layer_error);
+            doSGD(&g2[i].data[j], &g2[i].momentum[j], layer_error, lrate);
         
-        doSGD(&g2[i].bias, &g2[i].bias_momentum, layer_error);
+        doSGD(&g2[i].bias, &g2[i].bias_momentum, layer_error, lrate);
     }
     
     // layer three, output (fc compression)
@@ -562,9 +604,9 @@ void backpropGenerator(const float error)
         const float layer_error = (1-(1/i))*error;
 
         for(int j = 0; j < g3[i].weights; j++)
-            doSGD(&g3[i].data[j], &g3[i].momentum[j], layer_error);
+            doSGD(&g3[i].data[j], &g3[i].momentum[j], layer_error, lrate);
         
-        doSGD(&g3[i].bias, &g3[i].bias_momentum, layer_error);
+        doSGD(&g3[i].bias, &g3[i].bias_momentum, layer_error, lrate);
     }
 }
 /*
@@ -632,9 +674,9 @@ void trainDataset(const char* file)
 
             // train discriminator on generator
             float input[DIGEST_SIZE] = {0};
-            const int len = qRand(1, DIGEST_SIZE);
+            const int len = uRand(1, DIGEST_SIZE-1);
             for(int i = 0; i < len; i++)
-                input[i] = (((double)qRand(0, TABLE_SIZE))/TABLE_SIZE_H)-1.0;
+                input[i] = (((double)uRand(0, TABLE_SIZE))/TABLE_SIZE_H)-1.0;
                 
             float output[DIGEST_SIZE] = {0};
             doGenerator(0, &input[0], &output[0]);
@@ -705,9 +747,9 @@ float isDaisy(char* str)
 float rndDaisy()
 {
     float nstr[DIGEST_SIZE] = {0};
-    const int len = qRand(1, DIGEST_SIZE);
+    const int len = uRand(1, DIGEST_SIZE-1);
     for(int i = 0; i < len; i++)
-        nstr[i] = (((double)qRand(0, TABLE_SIZE))/TABLE_SIZE_H)-1.0;
+        nstr[i] = (((double)uRand(0, TABLE_SIZE))/TABLE_SIZE_H)-1.0;
 
     for(int i = 0; i < DIGEST_SIZE; i++)
     {
@@ -750,7 +792,7 @@ int main(int argc, char *argv[])
     // are we issuing any commands?
     if(argc == 3)
     {
-        if(strcmp(argv[1], "relearn") == 0)
+        if(strcmp(argv[1], "retrain") == 0)
         {
             trainDataset(argv[2]);
             exit(0);
@@ -776,6 +818,15 @@ int main(int argc, char *argv[])
             exit(0);
         }
 
+        if(strcmp(argv[1], "rndloop") == 0)
+        {
+            while(1)
+            {
+                printf("> %.2f\n\n", rndDaisy());
+                //usleep(100000);
+            }
+        }
+
         char in[256] = {0};
         snprintf(in, 256, "%s", argv[1]);
         printf("%.2f\n", isDaisy(in));
@@ -792,9 +843,9 @@ int main(int argc, char *argv[])
     {
         // random generator input
         float input[DIGEST_SIZE] = {0};
-        const int len = qRand(1, DIGEST_SIZE);
+        const int len = uRand(1, DIGEST_SIZE-1);
         for(int i = 0; i < len; i++)
-            input[i] = (((double)qRand(0, TABLE_SIZE))/TABLE_SIZE_H)-1.0;
+            input[i] = (((double)uRand(0, TABLE_SIZE))/TABLE_SIZE_H)-1.0;
 
         // do generator
         float output[DIGEST_SIZE] = {0};
@@ -803,8 +854,9 @@ int main(int argc, char *argv[])
         // convert output to string of words
         for(int i = 0; i < DIGEST_SIZE; i++)
         {
-            const uint ind = (output[i]+1.0)*TABLE_SIZE_H;
-            printf("%s ", wtable[ind]);
+            const double ind = (output[i]+1.57079632679)*1547.304356744; //arctan conversion
+            if(output[i] != 0.0)
+                printf("%s ", wtable[(int)ind]);
         }
         printf("\n");
 
@@ -812,7 +864,7 @@ int main(int argc, char *argv[])
         last_error = crossEntropy(sigmoid(doDiscriminator(&output[0], -2)), 1);
 
         // back prop the generator [defunct method of backprop]
-        //backpropGenerator(last_error);
+        //backpropGenerator(last_error, 0.001);
 
         // output error
         printf("[%u]ERROR: %.2f\n\n", index, last_error);
