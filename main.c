@@ -2,47 +2,7 @@
 --------------------------------------------------
     91f7d09794d8da29f028e77df49d4907
 --------------------------------------------------
-    DaisyGAN
-
-    This is kind of like my trading bots but
-    for the weight_override was substituted
-    for error_override as to feed back in a
-    custom error value into the backprop.
-
-    Only the arctan and lecun_tanh has good
-    results, more so arctan hence having
-    hardcoded the bot around this specific
-    activator.
-*/
-/*
-<?php
-    $token = '<BOT TOKEN>';
-    $j = json_decode(file_get_contents("php://input"));
-
-    if(isset($j->{'message'}->{'text'}))
-    {
-        if(strstr($j->{'message'}->{'text'}, "/isdaisy") != FALSE && isset($j->{'message'}->{'reply_to_message'}->{'text'}))
-        {
-            $percent = rtrim(shell_exec('/srv/cfdgan "' . $j->{'message'}->{'reply_to_message'}->{'text'} . '"'), "\n");
-            $chatid = $j->{'message'}->{'chat'}->{'id'};
-            file_get_contents("https://api.telegram.org/bot" . $token . "/sendMessage?chat_id=" . $chatid . "&text=".urlencode('"'.$j->{'message'}->{'reply_to_message'}->{'text'}).'"'."+is+" . urlencode($percent) . "%25+something+Daisy+(@VXF97)+would+say.");
-            http_response_code(200);
-            exit;
-        }
-
-        if(strstr($j->{'message'}->{'text'}, "/quote") != FALSE)
-        {
-            $file = file("k.txt"); 
-            $line = $file[rand(0, count($file) - 1)];
-            $chatid = $j->{'message'}->{'chat'}->{'id'};
-            file_get_contents("https://api.telegram.org/bot" . $token . "/sendMessage?chat_id=" . $chatid . "&text=".urlencode($line));
-            http_response_code(200);
-            exit;
-        }
-    }
-
-    http_response_code(200);
-?>
+    DaisyGANv2
 */
 
 #pragma GCC diagnostic ignored "-Wunused-result"
@@ -820,15 +780,13 @@ int main(int argc, char *argv[])
         float output[DIGEST_SIZE] = {0};
         doGenerator(last_error, &input[0], &output[0]);
 
-        // convert output to string
-        char str[DIGEST_SIZE+1] = {0};
+        // convert output to string of words
         for(int i = 0; i < DIGEST_SIZE; i++)
         {
-            str[i] = (output[i]+1.57079632679)*81.169020977; //arctan conversion
-            //printf("^%.2f\n", (output[i]+1.57079632679)*81.169020977);
+            const uint ind = (output[i]+1.0)*TABLE_SIZE_H;
+            printf("%s ", wtable[ind]);
         }
-        str[DIGEST_SIZE] = 0x00;
-        printf("%s\n", str);
+        printf("\n");
 
         // feed generator output into discriminator input, take the error, sigmoid it to 0-1, take the loss, put it back through as the error for the next generation
         last_error = crossEntropy(sigmoid(doDiscriminator(&output[0], -2)), 1);
