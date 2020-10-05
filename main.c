@@ -461,7 +461,7 @@ float doPerceptron(const float* in, ptron* p, const float error_override, const 
 //~~ Teach perceptron
     if(eo != -2 || error_override != 0)
     {
-        const float error = error_override == 0 ? eo - ro : error_override; // error gradient
+        const float error = error_override == 0 ? eo - ro : error_override - ro; // error gradient
         for(uint i = 0; i < p->weights; i++)
         {
             // Regular Gradient Descent
