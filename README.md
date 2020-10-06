@@ -13,7 +13,7 @@ Unfortunately, the performance of this network was still particularly poor, howe
 
 ## Example Usage
 - You want to start off by training the network from the provided dataset.
-```./cfdgan retrain <optional file path>``` 
+- ```./cfdgan retrain <optional file path>``` 
 - ```./cfdgan "this is an example scentence"``` - Get a percentage of likelyhood that the user Daisy wrote the provided message.
 - ```./cfdgan rnd``` - Get the percentage of likelyhood that Daisy wrote a provided random message.
 - ```./cfdgan ask``` - A never ending console loop where you get to ask what percntage likelyhood Daisy wrote a given message.
