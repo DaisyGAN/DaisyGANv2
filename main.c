@@ -414,12 +414,16 @@ float crossEntropy(const float predicted, const float expected) //log loss
 
 float doPerceptron(const float* in, ptron* p, const float error_override, const float eo)
 {
-    if(_dropout != 0)
+//~~ Perceptron dropout [only during training]
+    if(eo != -2 || error_override != 0)
     {
-        if(uRandWeight(0.01, 1) <= _dropout)
-            return 0;
+        if(_dropout != 0)
+        {
+            if(uRandWeight(0.01, 1) <= _dropout)
+                return 0;
+        }
     }
-
+    
 //~~ Query perceptron
     //Sum inputs mutliplied by weights
     float ro = 0;
