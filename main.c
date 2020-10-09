@@ -859,7 +859,7 @@ int main(int argc, char *argv[])
         // convert output to string of words
         for(int i = 0; i < DIGEST_SIZE; i++)
         {
-            const double ind = (output[i]+1.57079632679)*1547.304356744; //arctan conversion
+            const double ind = (output[i]+1.57079632679)*3094.608713488; //arctan conversion
             if(output[i] != 0.0)
                 printf("%s ", wtable[(int)ind]);
         }
