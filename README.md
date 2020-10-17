@@ -1,5 +1,5 @@
 # DaisyGANv2
-This is a [Generative adversarial network](https://en.wikipedia.org/wiki/Generative_adversarial_network) which digests character streams.
+This is a [Generative adversarial network](https://en.wikipedia.org/wiki/Generative_adversarial_network) which digests word arrays.
 
 Following on from DaisyGAN v1 left off; a significant modification was made so that the network would process indexed words form a pre-computed word table.
 
